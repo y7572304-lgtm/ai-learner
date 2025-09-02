@@ -1,0 +1,20 @@
+{
+  "path": "d:\\ai-learning-engine",
+  "desc": "This is a React-based AI learning engine application with features such as user management, learning modules, achievements, and leaderboards. It uses Redux for state management, React Router for navigation, and Ant Design for UI components.",
+  "id": "c264cf7c571b48acac64edaea544688a",
+  "data": {
+    "spaceKey": "c264cf7c571b48acac64edaea544688a",
+    "connections": {
+      "webIDE": "https://c264cf7c571b48acac64edaea544688a.codebuddy.cloudstudio.club",
+      "preview": "https://c264cf7c571b48acac64edaea544688a--{port}.codebuddy.cloudstudio.club",
+      "api": "https://c264cf7c571b48acac64edaea544688a--api.codebuddy.cloudstudio.club",
+      "pty": "https://c264cf7c571b48acac64edaea544688a--pty.codebuddy.cloudstudio.club"
+    }
+  },
+  "config": {
+    "api": "https://c264cf7c571b48acac64edaea544688a--api.codebuddy.cloudstudio.club",
+    "pty": "https://c264cf7c571b48acac64edaea544688a--pty.codebuddy.cloudstudio.club",
+    "region": "ap-shanghai",
+    "spaceKey": "c264cf7c571b48acac64edaea544688a"
+  }
+}
