@@ -21,12 +21,25 @@ const Analytics = () => {
   const dispatch = useDispatch();
   const learningData = useSelector(selectLearningData);
   const themeSettings = useSelector(selectThemeSettings);
+  // 修正数据访问路径
+  const learningPlan = learningData?.learningPlan || { daily: [], weekly: [], monthly: [] }; // 提供默认值以防止 undefined
   
   const [timeRange, setTimeRange] = useState('week');
   const [activeTab, setActiveTab] = useState('overview');
   
-  // 学习时间图表选项
+  // 计算学习时间数据（每日学习时长）
   const getStudyTimeChartOption = () => {
+    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const dailyStudyTime = days.map(() => 0); // 初始化每周学习时间为0
+
+    // 确保 daily 存在
+    if (learningPlan.daily && Array.isArray(learningPlan.daily)) {
+      learningPlan.daily.forEach(task => {
+        const dayIndex = (new Date().getDay() + parseInt(task.id.slice(1))) % 7; // 简单分配到周一到周日
+        dailyStudyTime[dayIndex] += (task.duration || 0) / 60; // 转换为小时，防止 duration undefined
+      });
+    }
+
     return {
       title: {
         text: '学习时间分析',
@@ -38,14 +51,14 @@ const Analytics = () => {
       },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: days
       },
       yAxis: {
         type: 'value',
         name: '学习时长(小时)'
       },
       series: [{
-        data: [3.5, 4.2, 5.0, 4.8, 3.9, 5.5, 4.5],
+        data: dailyStudyTime,
         type: 'bar',
         name: '学习时长',
         itemStyle: {
@@ -57,8 +70,15 @@ const Analytics = () => {
     };
   };
   
-  // 学科进度图表选项
+  // 计算学科进度数据（基于月度目标）
   const getSubjectProgressChartOption = () => {
+    const subjects = learningPlan.monthly && Array.isArray(learningPlan.monthly) 
+      ? learningPlan.monthly.map(goal => goal.subject || '未知学科')
+      : ['无数据'];
+    const progress = learningPlan.monthly && Array.isArray(learningPlan.monthly) 
+      ? learningPlan.monthly.map(goal => goal.progress || 0)
+      : [0];
+
     return {
       title: {
         text: '学科进度分析',
@@ -70,7 +90,7 @@ const Analytics = () => {
       },
       xAxis: {
         type: 'category',
-        data: ['数学', '英语', '物理', '化学', '生物', '历史']
+        data: subjects
       },
       yAxis: {
         type: 'value',
@@ -78,7 +98,7 @@ const Analytics = () => {
         max: 100
       },
       series: [{
-        data: [85, 70, 90, 65, 75, 60],
+        data: progress,
         type: 'bar',
         name: '学科进度',
         itemStyle: {
@@ -90,8 +110,25 @@ const Analytics = () => {
     };
   };
   
-  // 学习习惯图表选项
+  // 计算学习习惯数据（基于每日任务的时间分布）
   const getLearningHabitsChartOption = () => {
+    const habits = [
+      { name: '早晨学习', value: 0 },
+      { name: '下午学习', value: 0 },
+      { name: '晚间学习', value: 0 },
+      { name: '深夜学习', value: 0 }
+    ];
+
+    // 确保 daily 存在
+    if (learningPlan.daily && Array.isArray(learningPlan.daily)) {
+      learningPlan.daily.forEach(task => {
+        if (task.priority === 'high') habits[0].value += task.duration || 0; // 高优先级归为早晨
+        else if (task.priority === 'medium') habits[1].value += task.duration || 0; // 中优先级归为下午
+        else if (task.priority === 'low') habits[2].value += task.duration || 0; // 低优先级归为晚间
+        else habits[3].value += task.duration || 0; // 其他归为深夜
+      });
+    }
+
     return {
       title: {
         text: '学习习惯分析',
@@ -99,7 +136,7 @@ const Analytics = () => {
       },
       tooltip: {
         trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
+        formatter: '{a} <br/>{b}: {c} 分钟 ({d}%)'
       },
       legend: {
         orient: 'vertical',
@@ -130,19 +167,32 @@ const Analytics = () => {
           labelLine: {
             show: false
           },
-          data: [
-            { value: 35, name: '早晨学习' },
-            { value: 25, name: '下午学习' },
-            { value: 30, name: '晚间学习' },
-            { value: 10, name: '深夜学习' }
-          ]
+          data: habits.filter(habit => habit.value > 0) // 仅显示有数据的习惯
         }
       ]
     };
   };
   
-  // 效率趋势图表选项
+  // 计算学习效率趋势（基于每日任务完成率）
   const getEfficiencyTrendChartOption = () => {
+    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const efficiency = days.map(() => 0);
+    const taskCounts = days.map(() => 0);
+
+    // 确保 daily 存在
+    if (learningPlan.daily && Array.isArray(learningPlan.daily)) {
+      learningPlan.daily.forEach(task => {
+        const dayIndex = (new Date().getDay() + parseInt(task.id.slice(1))) % 7;
+        efficiency[dayIndex] += task.completed ? 100 : 0;
+        taskCounts[dayIndex]++;
+      });
+    }
+
+    // 计算平均效率
+    efficiency.forEach((value, index) => {
+      efficiency[index] = taskCounts[index] > 0 ? value / taskCounts[index] : 0;
+    });
+
     return {
       title: {
         text: '学习效率趋势',
@@ -153,7 +203,7 @@ const Analytics = () => {
       },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: days
       },
       yAxis: {
         type: 'value',
@@ -161,7 +211,7 @@ const Analytics = () => {
         max: 100
       },
       series: [{
-        data: [75, 82, 78, 85, 80, 88, 85],
+        data: efficiency,
         type: 'line',
         name: '学习效率',
         smooth: true,
